@@ -29,7 +29,13 @@ export const setTheme = (theme) => {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme)
     document.documentElement.setAttribute('data-theme', theme)
-    document.documentElement.classList.toggle('dark', theme === themes.dark)
+    
+    // Remove dark class if it exists
+    if (theme === themes.dark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
   } catch (error) {
     console.error('Error saving theme to storage:', error)
   }
