@@ -43,7 +43,17 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Health check
   app.get('/health', async () => {
     return {
-      status: 'healthy',
+      status: 'ok',
+      service: 'node-backend',
+      timestamp: new Date().toISOString(),
+    };
+  });
+
+  // API v1 health check
+  app.get('/api/v1/health', async () => {
+    return {
+      status: 'ok',
+      service: 'node-backend',
       timestamp: new Date().toISOString(),
     };
   });

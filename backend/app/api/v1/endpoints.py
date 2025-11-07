@@ -530,7 +530,8 @@ async def clear_cache(
 async def health_check():
     """Health check endpoint."""
     return {
-        "status": "healthy",
+        "status": "ok",
+        "service": "python-backend",
         "services": {
             "ocr": ocr_service.easyocr_reader is not None,
             "embedding": embedding_service.model is not None,

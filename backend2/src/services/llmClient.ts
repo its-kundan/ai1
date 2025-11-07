@@ -11,7 +11,7 @@
 import { logger } from '../utils/logger';
 import { spawn } from 'child_process';
 
-const LLM_SERVICE_URL = process.env.LLM_SERVICE_URL || 'http://localhost:5005/infer';
+const LLM_SERVICE_URL = process.env.LLM_SERVICE_URL || process.env.LLM_HOST || 'http://localhost:5005/infer';
 const LLM_TIMEOUT_MS = parseInt(process.env.LLM_TIMEOUT_MS || '30000', 10);
 const LLM_MAX_TOKENS = parseInt(process.env.LLM_MAX_TOKENS || '512', 10);
 

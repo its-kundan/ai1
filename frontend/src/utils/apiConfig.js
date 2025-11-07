@@ -6,7 +6,10 @@
 // Backend API base URL
 // Default to backend2 (Fastify) on port 8001
 // Can be switched to Python backend on port 8000 if needed
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'
+// Supports FRONTEND_API_URL or VITE_API_BASE_URL for compatibility
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+                            import.meta.env.VITE_FRONTEND_API_URL || 
+                            'http://localhost:8001'
 
 // API version prefix
 export const API_PREFIX = '/api/v1'

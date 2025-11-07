@@ -12,7 +12,7 @@ import { logger } from '../utils/logger';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-const OCR_SERVICE_URL = process.env.OCR_SERVICE_URL || 'http://localhost:8100/api/v1/ocr';
+const OCR_SERVICE_URL = process.env.OCR_SERVICE_URL || process.env.OCR_HOST || 'http://localhost:8200/ocr';
 
 export interface OCRBlock {
   text: string;

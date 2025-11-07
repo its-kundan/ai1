@@ -10,7 +10,7 @@
 
 import { logger } from '../utils/logger';
 
-const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || 'http://localhost:8100/api/v1/embed';
+const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || process.env.EMBED_HOST || 'http://localhost:8100/embed';
 const EMBEDDING_DIMENSION = 1536; // Adjust based on your model (e.g., OpenAI text-embedding-ada-002 uses 1536)
 
 export type EmbeddingMode = 'external_http' | 'local_node';

@@ -1,0 +1,129 @@
+# Unified Docker Compose for Local Development Stack
+# Usage: docker-compose up -d
+# This starts Postgres (with pgvector), Redis, and optional Python model services
+
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: chatdb-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: chatdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend2/docker/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
+      - ./data/postgres_backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: chatdb-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./data/redis_backups:/backups
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Optional: Python Embedding Service (uncomment to use)
+  # embedding-service:
+  #   build:
+  #     context: ./models
+  #     dockerfile: Dockerfile.embedding
+  #   container_name: embedding-service
+  #   ports:
+  #     - "8100:8100"
+  #   environment:
+  #     - EMBED_PORT=8100
+  #     - EMBED_HOST=0.0.0.0
+  #     - EMBED_MODEL_NAME=all-MiniLM-L6-v2
+  #     - EMBED_GPU_ENABLED=false
+  #   volumes:
+  #     - ./data:/app/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   depends_on:
+  #     - postgres
+  #     - redis
+
+  # Optional: Python OCR Service (uncomment to use)
+  # ocr-service:
+  #   build:
+  #     context: ./models
+  #     dockerfile: Dockerfile.ocr
+  #   container_name: ocr-service
+  #   ports:
+  #     - "8200:8200"
+  #   environment:
+  #     - OCR_PORT=8200
+  #     - OCR_HOST=0.0.0.0
+  #     - OCR_BACKEND=easyocr
+  #     - OCR_GPU_ENABLED=false
+  #     - OCR_UPLOAD_DIR=/app/data/uploads
+  #   volumes:
+  #     - ./data/uploads:/app/data/uploads
+  #     - ./data/ocr_results:/app/data/ocr_results
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8200/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   depends_on:
+  #     - postgres
+  #     - redis
+
+  # Optional: Python LLM Service (uncomment to use)
+  # llm-service:
+  #   build:
+  #     context: ./models
+  #     dockerfile: Dockerfile.llm
+  #   container_name: llm-service
+  #   ports:
+  #     - "5005:5005"
+  #   environment:
+  #     - LLM_PORT=5005
+  #     - LLM_HOST=0.0.0.0
+  #     - LLM_BACKEND=mock
+  #     - LLM_GPU_ENABLED=false
+  #   volumes:
+  #     - ./data:/app/data
+  #     - ./models/models/llm:/app/models/llm
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   depends_on:
+  #     - postgres
+  #     - redis
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
