@@ -1,0 +1,103 @@
+// Prisma schema for backend2
+// PostgreSQL with pgvector extension
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users table (optional for future multi-user support)
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// Chat sessions
+model Chat {
+  id          String   @id @default(uuid())
+  chatId      String   @unique @map("chat_id") // e.g., "chat_1"
+  title       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  lastActive  DateTime @default(now()) @map("last_active")
+  meta        Json?    @default("{}")
+  
+  messages    Message[]
+
+  @@index([lastActive])
+  @@map("chats")
+}
+
+// Chat messages
+model Message {
+  id        Int      @id @default(autoincrement())
+  chatId   String   @map("chat_id")
+  role     String   // "user" | "assistant" | "system"
+  text     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  meta     Json?    @default("{}")
+  
+  chat     Chat     @relation(fields: [chatId], references: [chatId], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// Documents table
+model Document {
+  id        String   @id @default(uuid())
+  documentId String  @unique @map("document_id") // e.g., "doc_12345"
+  filename  String
+  docType   String   @map("doc_type") // "bank_statement" | "cdr" | "ipdr" | "general"
+  filepath  String
+  status    String   // "uploaded" | "processing" | "processed" | "failed"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  meta      Json?    @default("{}")
+  
+  ocrResults OCRResult[]
+  embeddings Embedding[]
+
+  @@index([documentId])
+  @@index([status])
+  @@map("documents")
+}
+
+// OCR results
+model OCRResult {
+  id            String   @id @default(uuid())
+  documentId    String   @map("document_id")
+  rawText       String   @db.Text @map("raw_text")
+  structuredJson Json?   @map("structured_json") @db.JsonB
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  document      Document @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("ocr_results")
+}
+
+// Embeddings table with pgvector
+// Note: Prisma doesn't natively support vector type, so we'll use a migration
+// to add the vector column and create the index manually
+model Embedding {
+  id        Int      @id @default(autoincrement())
+  docId     String   @map("doc_id")
+  snippet   String   @db.Text
+  vector    Unsupported("vector(1536)")? // pgvector type - requires manual migration
+  meta      Json?    @default("{}") @db.JsonB
+  
+  document  Document @relation(fields: [docId], references: [documentId], onDelete: Cascade)
+
+  @@index([docId])
+  @@map("embeddings")
+}
+

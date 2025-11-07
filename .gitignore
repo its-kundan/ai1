@@ -185,6 +185,21 @@ local/
 *.sqlite
 *.sqlite3
 
+# Backend specific
+backend/data/
+backend/data/**/*
+!backend/data/.gitkeep
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+backend/data/ocr_results/*
+!backend/data/ocr_results/.gitkeep
+backend/data/faiss_index/*
+!backend/data/faiss_index/.gitkeep
+backend/data/logs/*
+!backend/data/logs/.gitkeep
+*.index
+*.faiss
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
