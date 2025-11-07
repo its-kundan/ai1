@@ -1,0 +1,40 @@
+# Dockerfile for OCR Service
+# Build: docker build -f Dockerfile.ocr -t ocr-service .
+# Run: docker run -p 8200:8200 -v $(pwd)/data:/app/data ocr-service
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    poppler-utils \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY services/ocr_service.py ./services/
+COPY utils/ ./utils/
+
+# Create data directories
+RUN mkdir -p /app/data/uploads
+
+# Expose port
+EXPOSE 8200
+
+# Set environment variables
+ENV OCR_PORT=8200
+ENV OCR_HOST=0.0.0.0
+ENV OCR_BACKEND=easyocr
+ENV OCR_UPLOAD_DIR=/app/data/uploads
+
+# Run service
+CMD ["python", "services/ocr_service.py"]
+

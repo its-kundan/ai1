@@ -1,0 +1,39 @@
+# Dockerfile for LLM Inference Service
+# Build: docker build -f Dockerfile.llm -t llm-service .
+# Run: docker run -p 5005:5005 -v $(pwd)/models/llm:/app/models/llm -e LLM_MODEL_PATH=/app/models/llm/model.gguf llm-service
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install llama-cpp-python (CPU version)
+RUN pip install llama-cpp-python --no-cache-dir
+
+# Copy service code
+COPY services/llm_service.py ./services/
+COPY utils/ ./utils/
+
+# Create models directory
+RUN mkdir -p /app/models/llm
+
+# Expose port
+EXPOSE 5005
+
+# Set environment variables
+ENV LLM_PORT=5005
+ENV LLM_HOST=0.0.0.0
+ENV LLM_BACKEND=llamacpp
+
+# Run service
+CMD ["python", "services/llm_service.py"]
+

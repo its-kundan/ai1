@@ -1,0 +1,32 @@
+# Dockerfile for Embedding Service
+# Build: docker build -f Dockerfile.embedding -t embedding-service .
+# Run: docker run -p 8100:8100 embedding-service
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY services/embedding_service.py ./services/
+COPY utils/ ./utils/
+
+# Expose port
+EXPOSE 8100
+
+# Set environment variables
+ENV EMBED_PORT=8100
+ENV EMBED_HOST=0.0.0.0
+ENV EMBED_MODEL_NAME=all-MiniLM-L6-v2
+
+# Run service
+CMD ["python", "services/embedding_service.py"]
+

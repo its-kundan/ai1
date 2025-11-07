@@ -1,0 +1,51 @@
+# Model Layer Services - Python Dependencies
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# LLM Inference
+# llama-cpp-python for llama.cpp bindings (CPU)
+llama-cpp-python==0.2.20
+# Optional: vllm for GPU inference
+# vllm==0.2.5
+
+# Embeddings
+sentence-transformers==2.2.2
+torch==2.1.0
+transformers==4.35.0
+
+# OCR
+easyocr==1.7.0
+# Optional: PaddleOCR for better quality
+# paddlepaddle==2.5.2
+# paddleocr==2.7.0
+
+# Table Extraction
+camelot-py[cv]==0.11.0
+tabula-py==2.8.0
+pdf2image==1.16.3
+Pillow==10.1.0
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.25.1
+aiofiles==23.2.1
+
+# Monitoring & Logging
+prometheus-client==0.19.0
+structlog==23.2.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+requests==2.31.0  # For smoke tests
+
+# Development
+black==23.11.0
+ruff==0.1.6
+
