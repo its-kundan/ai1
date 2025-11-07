@@ -1,0 +1,22 @@
+[
+  {
+    "id": "chat-1",
+    "title": "Welcome Chat",
+    "createdAt": "2024-01-01T10:00:00Z",
+    "messages": [
+      {
+        "id": "msg-1",
+        "role": "user",
+        "content": "Hello! How can you help me today?",
+        "timestamp": "2024-01-01T10:00:00Z"
+      },
+      {
+        "id": "msg-2",
+        "role": "assistant",
+        "content": "Hello! I'm here to help you with various tasks. I can assist with questions, provide information, help with document analysis, and more. What would you like to know?",
+        "timestamp": "2024-01-01T10:00:05Z"
+      }
+    ]
+  }
+]
+

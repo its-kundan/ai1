@@ -1,0 +1,25 @@
+[
+  {
+    "id": "ocr-1",
+    "filename": "sample-document.pdf",
+    "uploadedAt": "2024-01-01T09:00:00Z",
+    "text": "This is a sample OCR result from a document. It contains extracted text that can be searched and analyzed.",
+    "metadata": {
+      "pages": 1,
+      "language": "en",
+      "confidence": 0.95
+    }
+  },
+  {
+    "id": "ocr-2",
+    "filename": "invoice.jpg",
+    "uploadedAt": "2024-01-01T08:30:00Z",
+    "text": "Invoice #12345\nDate: January 1, 2024\nTotal: $1,234.56\n\nItems:\n- Product A: $500.00\n- Product B: $734.56",
+    "metadata": {
+      "pages": 1,
+      "language": "en",
+      "confidence": 0.92
+    }
+  }
+]
+
