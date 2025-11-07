@@ -3,7 +3,8 @@ import { Loader2 } from 'lucide-react'
 import ChatBubble from './ChatBubble'
 import ChatInput from './ChatInput'
 import { useChatStore } from '../store/chatStore'
-import { generateMockResponse, simulateTyping } from '../utils/mockApi'
+import { sendChatMessage } from '../utils/api'
+import { generateId } from '../utils/idGenerator'
 
 const ChatBox = () => {
   const [input, setInput] = useState('')
@@ -81,26 +82,46 @@ const ChatBox = () => {
       createNewChat()
     }
 
-    // Simulate bot response
-    setIsTyping(true)
-    setTypingMessage({ role: 'assistant', content: '', timestamp: new Date().toISOString() })
+    // Get or use current chat ID
+    // Backend expects format: chat_1, chat_2, etc.
+    const chatId = currentChatId || currentChat?.id || `chat_${Date.now()}`
 
-    // Show thinking indicator
-    await simulateTyping((thinkingText) => {
-      if (thinkingText) {
-        setTypingMessage({ role: 'assistant', content: thinkingText, timestamp: new Date().toISOString() })
-      } else {
-        setTypingMessage(null)
-      }
+    // Show typing indicator
+    setIsTyping(true)
+    setTypingMessage({ 
+      role: 'assistant', 
+      content: 'Thinking...', 
+      timestamp: new Date().toISOString() 
     })
 
-    // Generate and add bot response
-    const botResponse = await generateMockResponse(userMessage || 'I see you uploaded a file. How can I help you with it?')
-    addMessage('assistant', botResponse)
-    
-    setIsTyping(false)
-    setTypingMessage(null)
-    setInput('')
+    try {
+      // Call chat API with retrieval enabled if search feature is on
+      const chatResponse = await sendChatMessage(
+        chatId,
+        userMessage,
+        features.search, // use_retrieval
+        3 // top_k
+      )
+
+      // Update typing message
+      setTypingMessage(null)
+      
+      // Add assistant response
+      addMessage('assistant', chatResponse.reply)
+      
+      // Log used documents if any
+      if (chatResponse.used_docs && chatResponse.used_docs.length > 0) {
+        console.log('Used documents:', chatResponse.used_docs)
+      }
+    } catch (error) {
+      console.error('Chat failed:', error)
+      // Show error message to user
+      addMessage('assistant', `Sorry, I encountered an error: ${error.message}. Please ensure the LLM service is running.`)
+    } finally {
+      setIsTyping(false)
+      setTypingMessage(null)
+      setInput('')
+    }
   }
 
   const handleUpload = async (file, response) => {

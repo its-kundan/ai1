@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { Send, Paperclip, X, FileText, Image, File, Loader2, CheckCircle } from 'lucide-react'
 import FeaturesDropdown from './FeaturesDropdown'
+import { uploadDocument, processOCR } from '../utils/api'
 
 /**
  * Premium ChatInput Component with Upload and Features
@@ -61,31 +62,45 @@ const ChatInput = forwardRef(({
 
   const handleUpload = async (fileData) => {
     setUploadProgress(prev => ({ ...prev, [fileData.id]: 0 }))
+    
+    try {
+      // Update status to uploading
+      setFiles(prev => prev.map(f =>
+        f.id === fileData.id ? { ...f, status: 'uploading' } : f
+      ))
 
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-      setUploadProgress(prev => ({ ...prev, [fileData.id]: i }))
-    }
+      // Determine document type based on features
+      let docType = 'general'
+      if (features.bank) docType = 'bank_statement'
+      else if (features.cdr) docType = 'cdr'
+      else if (features.ipdr) docType = 'ipdr'
 
-    // Mock upload response
-    const mockResponse = {
-      document_id: `doc-${Date.now()}`,
-      filepath: `/uploads/${fileData.name}`
-    }
+      // Upload file to backend
+      const uploadResponse = await uploadDocument(fileData.file, docType)
+      
+      // Update progress to 100%
+      setUploadProgress(prev => ({ ...prev, [fileData.id]: 100 }))
 
-    setFiles(prev => prev.map(f =>
-      f.id === fileData.id
-        ? { ...f, status: 'uploaded', documentId: mockResponse.document_id }
-        : f
-    ))
+      // Update file status
+      setFiles(prev => prev.map(f =>
+        f.id === fileData.id
+          ? { ...f, status: 'uploaded', documentId: uploadResponse.document_id }
+          : f
+      ))
 
-    // Call onUpload callback
-    onUpload?.(fileData.file, mockResponse)
+      // Call onUpload callback
+      onUpload?.(fileData.file, uploadResponse)
 
-    // Auto-run OCR if enabled
-    if (features.ocr && mockResponse.document_id) {
-      setTimeout(() => handleRunOCR(mockResponse.document_id, fileData.id), 500)
+      // Auto-run OCR if enabled
+      if (features.ocr && uploadResponse.document_id) {
+        setTimeout(() => handleRunOCR(uploadResponse.document_id, fileData.id), 500)
+      }
+    } catch (error) {
+      console.error('Upload failed:', error)
+      setFiles(prev => prev.map(f =>
+        f.id === fileData.id ? { ...f, status: 'error', error: error.message } : f
+      ))
+      alert(`Upload failed: ${error.message}`)
     }
   }
 
@@ -96,26 +111,40 @@ const ChatInput = forwardRef(({
 
     setUploadProgress(prev => ({ ...prev, [fileId]: 0 }))
 
-    // Simulate OCR progress
-    for (let i = 0; i <= 100; i += 20) {
-      await new Promise(resolve => setTimeout(resolve, 200))
-      setUploadProgress(prev => ({ ...prev, [fileId]: i }))
+    try {
+      // Show progress (OCR can take time)
+      setUploadProgress(prev => ({ ...prev, [fileId]: 30 }))
+      
+      // Call OCR API
+      const ocrResponse = await processOCR(documentId, true)
+      
+      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }))
+
+      // Extract preview data for display
+      const ocrResult = {
+        document_id: ocrResponse.document_id,
+        status: ocrResponse.status,
+        parsed_preview: ocrResponse.parsed_preview || {},
+        // Format preview fields for display
+        fields: ocrResponse.parsed_preview 
+          ? Object.entries(ocrResponse.parsed_preview).slice(0, 3).map(([key, value]) => `${key}: ${value}`)
+          : []
+      }
+
+      setFiles(prev => prev.map(f =>
+        f.id === fileId
+          ? { ...f, status: 'completed', ocrResult }
+          : f
+      ))
+
+      onRunOCR?.(documentId)
+    } catch (error) {
+      console.error('OCR failed:', error)
+      setFiles(prev => prev.map(f =>
+        f.id === fileId ? { ...f, status: 'error', error: error.message } : f
+      ))
+      alert(`OCR processing failed: ${error.message}`)
     }
-
-    // Mock OCR result
-    const mockOCRResult = {
-      text: 'Sample extracted text from document...',
-      fields: ['Field 1: Value 1', 'Field 2: Value 2'],
-      confidence: 0.95
-    }
-
-    setFiles(prev => prev.map(f =>
-      f.id === fileId
-        ? { ...f, status: 'completed', ocrResult: mockOCRResult }
-        : f
-    ))
-
-    onRunOCR?.(documentId)
   }
 
   const handleRemoveFile = (fileId) => {

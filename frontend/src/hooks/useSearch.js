@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useChatStore } from '../store/chatStore'
-import mockOCRResults from '../data/mockOCRResults.json'
+import { searchDocuments } from '../utils/api'
 
 export const useSearch = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -33,25 +33,30 @@ export const useSearch = () => {
     return results
   }, [searchQuery, chats])
 
-  // Search through OCR results (mock)
-  const searchDocuments = async (query) => {
+  // Search through documents using API
+  const searchDocumentsAPI = async (query) => {
     setIsSearching(true)
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    const results = mockOCRResults
-      .filter(doc => doc.text.toLowerCase().includes(query.toLowerCase()))
-      .map(doc => ({
+    try {
+      const response = await searchDocuments(query, 10) // top_k = 10
+      
+      // Transform API response to match expected format
+      const results = response.results.map(result => ({
         type: 'document',
-        id: doc.id,
-        filename: doc.filename,
-        text: doc.text,
-        uploadedAt: doc.uploadedAt
+        id: result.doc_id,
+        doc_id: result.doc_id,
+        snippet: result.snippet,
+        score: result.score,
+        metadata: result.metadata
       }))
-    
-    setIsSearching(false)
-    return results
+      
+      setIsSearching(false)
+      return results
+    } catch (error) {
+      console.error('Search failed:', error)
+      setIsSearching(false)
+      return [] // Return empty array on error
+    }
   }
 
   const performSearch = async () => {
@@ -64,7 +69,7 @@ export const useSearch = () => {
     
     // Search both chats and documents
     const chatResults = searchChats
-    const docResults = await searchDocuments(searchQuery)
+    const docResults = await searchDocumentsAPI(searchQuery)
     
     setSearchResults([...chatResults, ...docResults])
     setIsSearching(false)

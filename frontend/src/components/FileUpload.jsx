@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Upload, File, X, CheckCircle } from 'lucide-react'
+import { uploadDocument, processOCR } from '../utils/api'
 
 const FileUpload = () => {
   const [files, setFiles] = useState([])
@@ -54,20 +55,48 @@ const FileUpload = () => {
 
     setUploadStatus('uploading')
     
-    // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Simulate OCR processing
-    setUploadStatus('processing')
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    setUploadStatus('complete')
-    setFiles(prev => prev.map(f => ({ ...f, status: 'complete' })))
-    
-    setTimeout(() => {
-      setUploadStatus(null)
-      setFiles([])
-    }, 2000)
+    try {
+      // Upload all files
+      const uploadPromises = files.map(async (fileData) => {
+        const response = await uploadDocument(fileData.file, 'general')
+        return { ...fileData, documentId: response.document_id, status: 'uploaded' }
+      })
+
+      const uploadedFiles = await Promise.all(uploadPromises)
+      setFiles(uploadedFiles)
+      
+      // Process OCR for all uploaded files
+      setUploadStatus('processing')
+      const ocrPromises = uploadedFiles.map(async (fileData) => {
+        if (fileData.documentId) {
+          try {
+            const ocrResponse = await processOCR(fileData.documentId, true)
+            return { ...fileData, status: 'complete', ocrResult: ocrResponse }
+          } catch (error) {
+            console.error(`OCR failed for ${fileData.file.name}:`, error)
+            return { ...fileData, status: 'error', error: error.message }
+          }
+        }
+        return fileData
+      })
+
+      const processedFiles = await Promise.all(ocrPromises)
+      setFiles(processedFiles)
+      
+      setUploadStatus('complete')
+      
+      setTimeout(() => {
+        setUploadStatus(null)
+        setFiles([])
+      }, 2000)
+    } catch (error) {
+      console.error('Upload failed:', error)
+      setUploadStatus('error')
+      alert(`Upload failed: ${error.message}`)
+      setTimeout(() => {
+        setUploadStatus(null)
+      }, 3000)
+    }
   }
 
   return (
