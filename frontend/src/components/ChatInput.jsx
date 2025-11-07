@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { Send, Paperclip, X, FileText, Image, File, Loader2, CheckCircle } from 'lucide-react'
 import FeaturesDropdown from './FeaturesDropdown'
 
@@ -15,7 +15,7 @@ import FeaturesDropdown from './FeaturesDropdown'
  * @param {Function} props.onFeatureChange - Feature change handler
  * @param {boolean} props.disabled - Disable input
  */
-const ChatInput = ({
+const ChatInput = forwardRef(({
   value = '',
   onChange,
   onSubmit,
@@ -24,13 +24,20 @@ const ChatInput = ({
   features = {},
   onFeatureChange,
   disabled = false
-}) => {
+}, ref) => {
   const [files, setFiles] = useState([])
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState({})
   const fileInputRef = useRef(null)
   const inputRef = useRef(null)
   const dropZoneRef = useRef(null)
+
+  // Expose focus method to parent component
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus()
+    }
+  }))
 
   const handleFileSelect = useCallback((selectedFiles) => {
     Array.from(selectedFiles).forEach(file => {
@@ -369,7 +376,9 @@ const ChatInput = ({
       </form>
     </div>
   )
-}
+})
+
+ChatInput.displayName = 'ChatInput'
 
 export default ChatInput
 

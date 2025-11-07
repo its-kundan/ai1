@@ -17,8 +17,10 @@ const ChatBox = () => {
     bank: false
   })
   const messagesEndRef = useRef(null)
+  const chatInputRef = useRef(null)
 
   const currentChat = useChatStore(state => state.getCurrentChat())
+  const currentChatId = useChatStore(state => state.currentChatId)
   const addMessage = useChatStore(state => state.addMessage)
   const createNewChat = useChatStore(state => state.createNewChat)
   const clearCurrentChat = useChatStore(state => state.clearCurrentChat)
@@ -29,6 +31,18 @@ const ChatBox = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typingMessage])
+
+  // Focus input when a new chat is created (chat has no messages)
+  useEffect(() => {
+    // Focus when switching to a chat with no messages (newly created)
+    if (currentChatId && currentChat && currentChat.messages.length === 0) {
+      // Small delay to ensure the component is fully rendered
+      const timer = setTimeout(() => {
+        chatInputRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [currentChatId, currentChat])
 
   // Load features from localStorage
   useEffect(() => {
@@ -145,6 +159,7 @@ const ChatBox = () => {
           </div>
         )}
         <ChatInput
+          ref={chatInputRef}
           value={input}
           onChange={setInput}
           onSubmit={handleSend}
