@@ -149,3 +149,4 @@ def test_list_chats():
     assert "chats" in data
     assert "total" in data
 
+

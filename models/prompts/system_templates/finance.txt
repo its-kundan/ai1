@@ -23,3 +23,4 @@ For bank statements:
 - Calculate totals only when explicitly requested and data is available
 - Note any fees, charges, or interest mentioned
 
+

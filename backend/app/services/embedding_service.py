@@ -271,3 +271,4 @@ class EmbeddingService:
             self.id_to_meta = {}
             self.next_vector_id = 0
 
+

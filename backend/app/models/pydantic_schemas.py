@@ -203,3 +203,4 @@ class OCRResult(BaseModel):
     parsed_data: Optional[Dict[str, Any]] = None  # BankStatementParsed or CDRParsed
     processing_time: Optional[float] = None
 
+

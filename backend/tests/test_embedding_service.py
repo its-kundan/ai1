@@ -60,3 +60,4 @@ def test_add_and_search_documents(mock_faiss, mock_transformer):
     assert results[0]["doc_id"] == "doc_1"
     assert "score" in results[0]
 
+

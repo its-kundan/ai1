@@ -47,3 +47,4 @@ class TestConvenienceFunctions:
         truncated = truncate_text(text, max_tokens=3)
         assert count_tokens(truncated) <= 3
 
+

@@ -280,3 +280,4 @@ class ParserService:
                 "blocks_count": len(tables) if tables else 0
             }
 
+
