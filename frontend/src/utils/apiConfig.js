@@ -17,6 +17,9 @@ export const API_PREFIX = '/api/v1'
 // Full API base URL
 export const API_URL = `${API_BASE_URL}${API_PREFIX}`
 
+// LLM Mode: 'backend' (uses backend API) or 'ollama' (uses Ollama directly)
+export const LLM_MODE = import.meta.env.VITE_LLM_MODE || 'backend'
+
 // Helper to build full endpoint URL
 export const getApiUrl = (endpoint) => {
   // Remove leading slash if present

@@ -4,6 +4,8 @@ A complete local ChatGPT-like demo with document processing, semantic search, an
 
 ## Quick Start
 
+### Option 1: Full Stack (Backend + Models)
+
 ```bash
 # 1. Start infrastructure (Postgres + Redis)
 ./scripts/start-all.sh
@@ -22,6 +24,25 @@ cd backend && python -m app.main  # Python backend on port 8000
 # 4. Start frontend
 cd frontend && npm run dev  # Port 3000
 ```
+
+### Option 2: Ollama Mode (No Backend Required) ⚡
+
+**Simplest setup - Frontend connects directly to Ollama:**
+
+```bash
+# 1. Install Ollama and DeepSeek model
+ollama pull deepseek-chat:7b
+
+# 2. Configure frontend
+cd frontend
+echo "VITE_LLM_MODE=ollama" > .env
+echo "VITE_USE_OLLAMA_SERVICE=false" >> .env
+
+# 3. Start frontend
+npm run dev  # Port 3000
+```
+
+**That's it!** See [RUN_TOGETHER.md](./RUN_TOGETHER.md) for detailed setup.
 
 ## Architecture
 
@@ -42,6 +63,10 @@ See [INTEGRATION.md](./INTEGRATION.md) for complete architecture, setup, and tro
   - LLM inference (port 5005)
   - Embedding service (port 8100)
   - OCR service (port 8200)
+- **Ollama Service** (`models2/`): Ollama + DeepSeek (port 5006)
+  - **No backend required** - frontend can call directly
+  - Uses Ollama API with DeepSeek open-source models
+  - See [models2/README.md](./models2/README.md) for setup
 - **Infrastructure**: Postgres (5432) + Redis (6379)
 
 ## Environment Variables
@@ -65,10 +90,13 @@ curl http://localhost:5005/health          # LLM
 
 ## Documentation
 
+- **[RUN_TOGETHER.md](./RUN_TOGETHER.md)**: Quick guide to run Frontend + Ollama together
 - **[INTEGRATION.md](./INTEGRATION.md)**: Complete integration guide with flows, troubleshooting, and examples
 - **[backend/README.md](./backend/README.md)**: Python backend documentation
 - **[backend2/README.md](./backend2/README.md)**: Node backend documentation
 - **[models/README.md](./models/README.md)**: Model services documentation
+- **[models2/README.md](./models2/README.md)**: Ollama + DeepSeek setup guide
+- **[models2/FRONTEND_INTEGRATION.md](./models2/FRONTEND_INTEGRATION.md)**: Frontend integration details
 
 ## Testing
 

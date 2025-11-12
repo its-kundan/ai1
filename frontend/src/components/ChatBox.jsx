@@ -4,6 +4,8 @@ import ChatBubble from './ChatBubble'
 import ChatInput from './ChatInput'
 import { useChatStore } from '../store/chatStore'
 import { sendChatMessage } from '../utils/api'
+import { sendOllamaMessage, streamOllamaMessage } from '../utils/ollamaApi'
+import { LLM_MODE } from '../utils/apiConfig'
 import { generateId } from '../utils/idGenerator'
 
 const ChatBox = () => {
@@ -95,28 +97,76 @@ const ChatBox = () => {
     })
 
     try {
-      // Call chat API with retrieval enabled if search feature is on
-      const chatResponse = await sendChatMessage(
-        chatId,
-        userMessage,
-        features.search, // use_retrieval
-        3 // top_k
-      )
+      let chatResponse
+      
+      // Check LLM mode: 'ollama' uses Ollama directly, 'backend' uses backend API
+      if (LLM_MODE === 'ollama') {
+        // Use Ollama API directly (no backend needed)
+        console.log('Using Ollama mode (models2)')
+        
+        // Build prompt with context if needed
+        const contextMessages = messages.slice(-4).map(m => 
+          `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+        ).join('\n')
+        
+        const fullPrompt = contextMessages 
+          ? `${contextMessages}\n\nUser: ${userMessage}\nAssistant:`
+          : userMessage
+        
+        // Use streaming for better UX
+        let fullReply = ''
+        await streamOllamaMessage(
+          fullPrompt,
+          (chunk) => {
+            fullReply += chunk
+            // Update typing message with streaming content
+            setTypingMessage({
+              role: 'assistant',
+              content: fullReply,
+              timestamp: new Date().toISOString()
+            })
+          },
+          {
+            temperature: 0.7,
+            max_tokens: 512
+          }
+        )
+        
+        // Final update
+        setTypingMessage(null)
+        addMessage('assistant', fullReply)
+        chatResponse = { reply: fullReply }
+      } else {
+        // Use backend API (original behavior)
+        console.log('Using Backend mode')
+        chatResponse = await sendChatMessage(
+          chatId,
+          userMessage,
+          features.search, // use_retrieval
+          3 // top_k
+        )
 
-      // Update typing message
-      setTypingMessage(null)
-      
-      // Add assistant response
-      addMessage('assistant', chatResponse.reply)
-      
-      // Log used documents if any
-      if (chatResponse.used_docs && chatResponse.used_docs.length > 0) {
-        console.log('Used documents:', chatResponse.used_docs)
+        // Update typing message
+        setTypingMessage(null)
+        
+        // Add assistant response
+        addMessage('assistant', chatResponse.reply)
+        
+        // Log used documents if any
+        if (chatResponse.used_docs && chatResponse.used_docs.length > 0) {
+          console.log('Used documents:', chatResponse.used_docs)
+        }
       }
     } catch (error) {
       console.error('Chat failed:', error)
+      setTypingMessage(null)
+      
       // Show error message to user
-      addMessage('assistant', `Sorry, I encountered an error: ${error.message}. Please ensure the LLM service is running.`)
+      const errorMsg = LLM_MODE === 'ollama'
+        ? `Sorry, I encountered an error: ${error.message}. Please ensure Ollama is running (ollama pull deepseek-chat:7b).`
+        : `Sorry, I encountered an error: ${error.message}. Please ensure the LLM service is running.`
+      
+      addMessage('assistant', errorMsg)
     } finally {
       setIsTyping(false)
       setTypingMessage(null)
