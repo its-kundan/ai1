@@ -39,3 +39,6 @@ ENV OCR_UPLOAD_DIR=/app/data/uploads
 CMD ["python", "services/ocr_service.py"]
 
 
+
+
+

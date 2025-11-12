@@ -272,3 +272,6 @@ class EmbeddingService:
             self.next_vector_id = 0
 
 
+
+
+
