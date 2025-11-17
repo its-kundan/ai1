@@ -69,6 +69,83 @@ const ChatBox = () => {
     }
   }
 
+  // Function to add spaces between concatenated words
+  const addSpacesToText = (text) => {
+    let result = text
+    
+    // First, handle specific common patterns that appear frequently
+    // Add space after common contractions and pronouns (case-insensitive)
+    const contractions = ["I'm", "it's", "that's", "you're", "we're", "they're", "I've", "you've", "we've", "they've", "I'll", "you'll", "we'll", "they'll", "don't", "won't", "can't", "isn't", "aren't", "wasn't", "weren't"]
+    contractions.forEach(contraction => {
+      const regex = new RegExp(`(${contraction.replace("'", "\\'")})([a-z])`, 'gi')
+      result = result.replace(regex, '$1 $2')
+    })
+    
+    // Handle common word patterns - add space before and after common words
+    const commonWords = [
+      'happy', 'to', 'help', 'you', 'stands', 'for', 'amazon', 'web', 'services', 'aws',
+      'is', 'are', 'was', 'were', 'the', 'for', 'and', 'which', 'that', 'can', 'will', 'would',
+      'should', 'could', 'may', 'might', 'this', 'these', 'those', 'with', 'from', 'about',
+      'into', 'onto', 'upon', 'over', 'under', 'through', 'during', 'before', 'after', 'while',
+      'when', 'where', 'why', 'how', 'what', 'who', 'whom', 'whose', 'cloud', 'computing',
+      'platform', 'offers', 'wide', 'range', 'including', 'storage', 'database', 'management',
+      'analytics', 'machine', 'learning', 'security', 'used', 'build', 'deploy', 'manage',
+      'applications', 'workloads', 'like', 'know', 'more', 'about', 'provided', 'by'
+    ]
+    
+    // Add space around common words when they appear concatenated
+    commonWords.forEach(word => {
+      // Pattern: lowercase letter + word + lowercase letter (word in middle)
+      const regex1 = new RegExp(`([a-z])(${word})([a-z])`, 'gi')
+      result = result.replace(regex1, '$1 $2 $3')
+      
+      // Pattern: word + lowercase letter (word at start)
+      const regex2 = new RegExp(`(^|\\s)(${word})([a-z])`, 'gi')
+      result = result.replace(regex2, '$1$2 $3')
+      
+      // Pattern: lowercase letter + word (word at end, before punctuation or end of string)
+      const regex3 = new RegExp(`([a-z])(${word})([.!?,;:]|\\s|$)`, 'gi')
+      result = result.replace(regex3, '$1 $2$3')
+    })
+    
+    // Handle specific multi-word patterns
+    const patterns = [
+      ['happy', 'to', 'help'],
+      ['stands', 'for'],
+      ['amazon', 'web'],
+      ['web', 'services'],
+      ['cloud', 'computing'],
+      ['computing', 'platform'],
+      ['wide', 'range'],
+      ['database', 'management'],
+      ['machine', 'learning'],
+      ['would', 'you', 'like'],
+      ['to', 'know', 'more'],
+      ['more', 'about']
+    ]
+    
+    patterns.forEach(pattern => {
+      const joined = pattern.join('')
+      const spaced = pattern.join(' ')
+      // Replace the concatenated version with spaced version
+      result = result.replace(new RegExp(joined, 'gi'), spaced)
+    })
+    
+    // More aggressive: detect word boundaries in lowercase sequences
+    // Add space after common word endings followed by common word beginnings
+    const wordEndings = ['y', 'ed', 'ing', 'er', 'ly', 'tion', 'sion', 'ment', 'ness', 'ful', 'less']
+    const wordBeginnings = ['to', 'the', 'is', 'are', 'was', 'were', 'can', 'will', 'would', 'should', 'could', 'this', 'that', 'which', 'with', 'from', 'for', 'and', 'or', 'but']
+    
+    wordEndings.forEach(ending => {
+      wordBeginnings.forEach(beginning => {
+        const regex = new RegExp(`([a-z]+${ending})(${beginning})([a-z])`, 'gi')
+        result = result.replace(regex, '$1 $2 $3')
+      })
+    })
+    
+    return result
+  }
+
   const handleSend = async (message, uploadedFiles = []) => {
     if ((!message.trim() && uploadedFiles.length === 0) || isTyping) return
 
@@ -109,9 +186,12 @@ const ChatBox = () => {
           `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
         ).join('\n')
         
+        // Create a prompt that encourages direct answers
+        const systemInstruction = "You are a helpful assistant. Provide clear, direct answers to questions. Do not ask follow-up questions unless the user explicitly asks for more information."
+        
         const fullPrompt = contextMessages 
-          ? `${contextMessages}\n\nUser: ${userMessage}\nAssistant:`
-          : userMessage
+          ? `${systemInstruction}\n\n${contextMessages}\n\nUser: ${userMessage}\nAssistant:`
+          : `${systemInstruction}\n\nUser: ${userMessage}\nAssistant:`
         
         // Use streaming for better UX
         let fullReply = ''
@@ -119,10 +199,22 @@ const ChatBox = () => {
           fullPrompt,
           (chunk) => {
             fullReply += chunk
+            // Clean the reply in real-time for display (basic cleaning)
+            let displayReply = fullReply
+            // Remove usage tokens if they appear
+            displayReply = displayReply.replace(/\{.*input_tokens.*output_tokens.*\}/g, '')
+            // Add spaces between concatenated words
+            displayReply = addSpacesToText(displayReply)
+            // Basic spacing fixes
+            displayReply = displayReply.replace(/([.!?])([A-Za-z])/g, '$1 $2')
+            displayReply = displayReply.replace(/([a-z])([A-Z])/g, '$1 $2')
+            displayReply = displayReply.replace(/([.,!?;:])([A-Za-z])/g, '$1 $2')
+            // Normalize multiple spaces
+            displayReply = displayReply.replace(/\s+/g, ' ')
             // Update typing message with streaming content
             setTypingMessage({
               role: 'assistant',
-              content: fullReply,
+              content: displayReply,
               timestamp: new Date().toISOString()
             })
           },
@@ -132,10 +224,33 @@ const ChatBox = () => {
           }
         )
         
-        // Final update
+        // Final update - clean and format the reply
         setTypingMessage(null)
-        addMessage('assistant', fullReply)
-        chatResponse = { reply: fullReply }
+        // Clean up the reply: remove any trailing usage data, ensure proper formatting
+        let cleanedReply = fullReply.trim()
+        // Remove any usage tokens that might have been included (various formats)
+        cleanedReply = cleanedReply.replace(/\{'input_tokens':\s*\d+,\s*'output_tokens':\s*\d+\}/g, '')
+        cleanedReply = cleanedReply.replace(/\{"input_tokens":\s*\d+,\s*"output_tokens":\s*\d+\}/g, '')
+        cleanedReply = cleanedReply.replace(/\{input_tokens:\s*\d+,\s*output_tokens:\s*\d+\}/g, '')
+        cleanedReply = cleanedReply.replace(/\{.*input_tokens.*output_tokens.*\}/g, '')
+        
+        // Add spaces between concatenated words (do this first)
+        cleanedReply = addSpacesToText(cleanedReply)
+        
+        // Fix spacing issues: add space after punctuation if missing
+        cleanedReply = cleanedReply.replace(/([.!?])([A-Za-z])/g, '$1 $2')
+        // Fix spacing: add space before capital letters after lowercase (e.g., "Hello!It's" -> "Hello! It's")
+        cleanedReply = cleanedReply.replace(/([a-z])([A-Z])/g, '$1 $2')
+        // Fix spacing: add space after punctuation before lowercase (e.g., "Hello!how" -> "Hello! how")
+        cleanedReply = cleanedReply.replace(/([.!?])([a-z])/g, '$1 $2')
+        // Add space after punctuation marks
+        cleanedReply = cleanedReply.replace(/([.,!?;:])([A-Za-z])/g, '$1 $2')
+        // Normalize multiple spaces to single space
+        cleanedReply = cleanedReply.replace(/\s+/g, ' ')
+        cleanedReply = cleanedReply.trim()
+        
+        addMessage('assistant', cleanedReply)
+        chatResponse = { reply: cleanedReply }
       } else {
         // Use backend API (original behavior)
         console.log('Using Backend mode')
@@ -196,7 +311,13 @@ const ChatBox = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div 
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6"
+        style={{
+          overflowX: 'hidden',
+          wordWrap: 'break-word'
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500 dark:text-gray-400">

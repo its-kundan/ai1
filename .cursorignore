@@ -1,0 +1,16 @@
+# Cursor ignore file for this project
+# This file allows .env files to be accessible in Cursor
+# even though they are ignored by .gitignore
+
+# Explicitly allow .env files by negating ignore patterns
+# Note: Order matters - these patterns allow .env files to be visible to Cursor
+!**/.env
+!**/.env.*
+!**/.env.local
+!**/.env.development.local
+!**/.env.test.local
+!**/.env.production.local
+
+# You can add other patterns here that you want Cursor to ignore
+# but .env files will remain accessible
+

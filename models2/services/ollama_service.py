@@ -21,6 +21,7 @@ import asyncio
 import logging
 import time
 import uuid
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 
@@ -28,9 +29,16 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import uvicorn
 import httpx
+
+# Get the directory containing this file
+SERVICE_DIR = Path(__file__).parent
+# Get the models2 directory (parent of services)
+MODELS2_DIR = SERVICE_DIR.parent
+# Path to .env file
+ENV_FILE = MODELS2_DIR / ".env"
 
 # Configure logging
 logging.basicConfig(
@@ -42,16 +50,20 @@ logger = logging.getLogger("ollama_service")
 
 class Settings(BaseSettings):
     """Service configuration from environment variables."""
-    port: int = Field(default=5006, env="OLLAMA_PORT")
-    host: str = Field(default="127.0.0.1", env="OLLAMA_HOST")
-    ollama_base_url: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    model_name: str = Field(default="deepseek-chat:7b", env="OLLAMA_MODEL_NAME")
-    timeout: int = Field(default=120, env="OLLAMA_TIMEOUT")
-    auth_token: Optional[str] = Field(default=None, env="OLLAMA_AUTH_TOKEN")
+    port: int = Field(default=5006)
+    host: str = Field(default="127.0.0.1")
+    ollama_base_url: str = Field(default="http://localhost:11434")
+    model_name: str = Field(default="llama2")
+    timeout: int = Field(default=120)
+    auth_token: Optional[str] = Field(default=None)
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        env_prefix="OLLAMA_",
+        extra="ignore"
+    )
 
 
 settings = Settings()
@@ -415,9 +427,10 @@ async def list_models(authorization: Optional[str] = Header(None)):
 
 if __name__ == "__main__":
     uvicorn.run(
-        "ollama_service:app",
+        "services.ollama_service:app",
         host=settings.host,
         port=settings.port,
-        log_level="info"
+        log_level="info",
+        reload=False
     )
 

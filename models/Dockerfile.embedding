@@ -34,3 +34,5 @@ CMD ["python", "services/embedding_service.py"]
 
 
 
+
+

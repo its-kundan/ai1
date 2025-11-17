@@ -12,13 +12,19 @@ const ChatBubble = ({ message, isTyping = false }) => {
         </div>
       )}
       
-      <div className={`flex flex-col max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col max-w-[80%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
         <div
           className={`rounded-2xl px-4 py-3 shadow-sm ${
             isUser
               ? 'bg-cyan-500 dark:bg-cyan-600 text-white rounded-br-md'
               : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md'
           }`}
+          style={{
+            overflowWrap: 'break-word',
+            wordWrap: 'break-word',
+            wordBreak: 'break-word',
+            overflowX: 'hidden'
+          }}
         >
           {isTyping ? (
             <div className="flex gap-1">
@@ -27,7 +33,17 @@ const ChatBubble = ({ message, isTyping = false }) => {
               <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
             </div>
           ) : (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p 
+              className="whitespace-normal break-words"
+              style={{
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word'
+              }}
+            >
+              {message.content}
+            </p>
           )}
         </div>
         <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 px-1">

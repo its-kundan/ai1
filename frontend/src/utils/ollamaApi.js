@@ -227,20 +227,29 @@ export async function streamOllamaMessage(prompt, onChunk, options = {}) {
       for (const line of lines) {
         if (USE_OLLAMA_SERVICE) {
           // Service format: Server-Sent Events (SSE)
-          // Format: "data: {text}\n\n" or "data: [DONE]\n\n"
+          // Format: "data: {text}\n\n" or "data: [DONE]\n\n" or "data: {usage_object}\n\n"
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim()
-            if (data === '[DONE]' || data.startsWith('[USAGE:')) {
+            if (data === '[DONE]' || data.startsWith('[USAGE:') || data.startsWith('event:')) {
               continue
             }
-            // Try to parse as JSON first
+            // Try to parse as JSON first - if it's a usage object or other JSON, skip it
             try {
               const parsed = JSON.parse(data)
-              // If it's valid JSON but not text, skip
-              continue
+              // Check if it's a usage object (has input_tokens or output_tokens)
+              if (parsed.input_tokens !== undefined || parsed.output_tokens !== undefined) {
+                continue // Skip usage data
+              }
+              // If it's other JSON that's not text, skip
+              if (typeof parsed !== 'string') {
+                continue
+              }
+              // If it's a JSON string, use it
+              fullText += parsed
+              onChunk(parsed)
             } catch {
               // It's plain text data
-              if (data) {
+              if (data && !data.startsWith('{') && !data.startsWith('[')) {
                 fullText += data
                 onChunk(data)
               }

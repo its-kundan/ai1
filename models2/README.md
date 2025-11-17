@@ -20,37 +20,38 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ### 2. Install DeepSeek Model
 
-We recommend **`deepseek-chat:7b`** for general purpose chat:
+**Available DeepSeek Models in Ollama:**
 
-```bash
-ollama pull deepseek-chat:7b
-```
-
-**Alternative DeepSeek Models:**
-
-- **`deepseek-r1:7b`** - Better reasoning capabilities (recommended for complex tasks)
+- **`deepseek-v2:16b`** - Recommended for general purpose chat (16B parameters, ~8.9GB)
   ```bash
-  ollama pull deepseek-r1:7b
+  ollama pull deepseek-v2:16b
   ```
 
-- **`deepseek-coder:6.7b`** - Optimized for coding tasks
+- **`deepseek-v2:236b`** - Larger model for advanced tasks (236B parameters, very large)
   ```bash
-  ollama pull deepseek-coder:6.7b
+  ollama pull deepseek-v2:236b
   ```
 
-- **`deepseek-chat:32k`** - Longer context window (if you need to process long documents)
-  ```bash
-  ollama pull deepseek-chat:32k
-  ```
+**Note:** These models require Ollama version 0.1.40 or later. Check your version with `ollama --version`.
 
 **Model Comparison:**
 
-| Model | Size | Best For | Context |
-|-------|------|----------|---------|
-| `deepseek-chat:7b` | 4.1GB | General chat, balanced | 16K |
-| `deepseek-r1:7b` | 4.1GB | Reasoning, complex tasks | 16K |
-| `deepseek-coder:6.7b` | 3.8GB | Code generation, debugging | 16K |
-| `deepseek-chat:32k` | 4.1GB | Long documents, extended context | 32K |
+| Model | Size | Best For | Context | Requirements |
+|-------|------|----------|---------|--------------|
+| `deepseek-v2:16b` | ~8.9GB | General chat, balanced quality | 64K | Ollama 0.1.40+ |
+| `deepseek-v2:236b` | Very Large | Advanced tasks, highest quality | 64K | Ollama 0.1.40+, High-end hardware |
+
+**Alternative Models (if DeepSeek unavailable):**
+
+If you encounter network issues or prefer smaller models, try these alternatives:
+
+```bash
+ollama pull llama2        # 3.8GB - General purpose, proven stable
+ollama pull mistral       # 4.1GB - High quality, fast
+ollama pull gemma2:2b     # 1.4GB - Lightweight option
+```
+
+**Note:** If you encounter network timeout errors or "file does not exist" errors, see the [Troubleshooting](#model-not-found--network-timeout-errors) section below.
 
 ### 3. Verify Installation
 
@@ -59,7 +60,9 @@ ollama pull deepseek-chat:7b
 ollama list
 
 # Test the model
-ollama run deepseek-chat:7b "Hello, how are you?"
+ollama run deepseek-v2:16b "Hello, how are you?"
+# Or if using alternative:
+ollama run llama2 "Hello, how are you?"
 ```
 
 ### 4. Start the Service
@@ -106,7 +109,7 @@ const response = await fetch('http://localhost:11434/api/generate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    model: 'deepseek-chat:7b',
+    model: 'deepseek-v2:16b',
     prompt: 'Your question here',
     stream: false
   })
@@ -143,7 +146,7 @@ Create a `.env` file in `models2/` directory:
 OLLAMA_PORT=5006
 OLLAMA_HOST=127.0.0.1
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL_NAME=deepseek-chat:7b
+OLLAMA_MODEL_NAME=deepseek-v2:16b
 OLLAMA_TIMEOUT=120
 OLLAMA_AUTH_TOKEN=  # Optional, leave empty to disable
 ```
@@ -240,19 +243,84 @@ ollama --version
 # If not installed, download from https://ollama.com
 ```
 
-### Model not found
-```bash
-# List installed models
-ollama list
+### Model not found / Network timeout errors
 
-# Pull the model if missing
-ollama pull deepseek-chat:7b
+If you get errors like `Error: pull model manifest: file does not exist` or `i/o timeout`:
+
+**1. Check your internet connection:**
+```bash
+# Test connectivity to Ollama registry
+curl -I https://registry.ollama.ai
+```
+
+**2. Try alternative model names:**
+The correct DeepSeek model names in Ollama are:
+```bash
+# DeepSeek V2 models (requires Ollama 0.1.40+)
+ollama pull deepseek-v2:16b      # Recommended: 16B model (~8.9GB)
+ollama pull deepseek-v2:236b     # Large model for advanced tasks
+
+# If DeepSeek models fail, try these alternatives:
+ollama pull llama2        # Test with known working model first
+ollama pull mistral       # Another alternative
+ollama pull gemma2:2b    # Lightweight option
+```
+
+**Note:** The older model names like `deepseek-chat:7b` and `deepseek-r1:7b` are not available in Ollama's library. Use `deepseek-v2:16b` instead.
+
+**3. Check Ollama version:**
+```bash
+ollama --version
+# Update to latest if needed: https://ollama.com/download
+```
+
+**4. Network/Proxy issues:**
+If behind a firewall or proxy:
+```bash
+# Set proxy environment variables (if needed)
+export HTTP_PROXY=http://your-proxy:port
+export HTTPS_PROXY=http://your-proxy:port
+
+# Then retry
+ollama pull deepseek-v2:16b
+```
+
+**5. Retry with longer timeout:**
+Network issues may be temporary. Simply retry:
+```bash
+ollama pull deepseek-v2:16b
+# If it fails, wait a few minutes and try again
+# Large models (8.9GB+) may take 30+ minutes to download
+```
+
+**6. Verify model availability:**
+Check Ollama's library website for current model names:
+- https://ollama.com/library
+- Search for "deepseek" to see available models
+
+**7. Use a working model temporarily:**
+If DeepSeek models are unavailable, you can use other models:
+```bash
+ollama pull llama2        # 3.8GB - General purpose
+ollama pull mistral       # 4.1GB - High quality
+ollama pull gemma2:2b    # 1.4GB - Lightweight
+```
+
+Then update your `.env` file:
+```bash
+OLLAMA_MODEL_NAME=llama2  # or mistral, gemma2:2b, etc.
 ```
 
 ### Service can't connect to Ollama
 - Make sure Ollama is running: `ollama list` should work
 - Check Ollama URL in `.env`: default is `http://localhost:11434`
 - On Windows, Ollama should start automatically after installation
+- Restart Ollama service if needed:
+  ```bash
+  # Windows: Restart from Services or Task Manager
+  # Linux/Mac: 
+  sudo systemctl restart ollama
+  ```
 
 ### Slow responses
 - Use GPU if available (Ollama auto-detects)
