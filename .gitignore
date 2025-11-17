@@ -91,6 +91,7 @@ cache/
 *.cache
 
 # Model files (usually large)
+uploads
 models/*.pth
 models/*.pt
 models/*.h5

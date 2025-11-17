@@ -21,10 +21,25 @@ const ocrRoutes: FastifyPluginAsync = async (fastify) => {
     let documentId: string | null = null;
 
     try {
-      // Handle multipart form data (file upload fallback)
-      const data = await request.file();
+      // Handle multipart form data (file upload fallback) OR JSON body
+      let data = null;
       let docId: string | undefined;
       let parseTables = true;
+
+      // Try to get multipart file, but don't fail if it's JSON
+      try {
+        data = await request.file();
+      } catch (error: any) {
+        // If it's not multipart, that's okay - we'll handle JSON below
+        // Only ignore multipart-related errors, re-throw others
+        if (error.message && error.message.includes('multipart')) {
+          // Request is JSON, data remains null
+          data = null;
+        } else {
+          // Different error, re-throw it
+          throw error;
+        }
+      }
 
       if (data) {
         // File upload path - save file first

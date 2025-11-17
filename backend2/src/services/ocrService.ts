@@ -93,8 +93,17 @@ async function callPythonOCRService(
       parsed_data: result.parsed_data,
       processing_time: result.processing_time,
     };
-  } catch (error) {
-    logger.error({ error, documentId }, 'Python OCR service call failed');
+  } catch (error: any) {
+    logger.error({ error, documentId, ocrServiceUrl: OCR_SERVICE_URL }, 'Python OCR service call failed');
+    
+    // Provide helpful error message if service is not available
+    if (error.message?.includes('fetch failed') || error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
+      throw new Error(
+        `OCR service is not available at ${OCR_SERVICE_URL}. ` +
+        `Please start the Python OCR service: cd models && python -m services.ocr_service`
+      );
+    }
+    
     throw error;
   }
 }
